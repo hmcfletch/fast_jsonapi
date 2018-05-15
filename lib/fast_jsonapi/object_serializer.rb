@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'concurrent'
 require 'active_support/core_ext/object'
 require 'active_support/concern'
 require 'active_support/inflector'
@@ -31,6 +32,12 @@ module FastJsonapi
     end
     alias_method :to_hash, :serializable_hash
 
+    def serializable_hash_concurrent
+      return hash_for_collection_concurrent if is_collection?(@resource)
+
+      hash_for_one_record
+    end
+
     def hash_for_one_record
       serializable_hash = { data: nil }
       serializable_hash[:meta] = @meta if @meta.present?
@@ -58,8 +65,40 @@ module FastJsonapi
       serializable_hash
     end
 
+    def hash_for_collection_concurrent
+      serializable_hash = {}
+
+      promises = []
+
+      @resource.each do |record|
+        # data << self.class.record_hash(record)
+        promises << Concurrent::Promise.execute(executor: :fast) do
+          self.class.record_hash(record)
+        end
+      end
+
+      serializable_hash[:data] = Concurrent::Promise.zip(*promises).value
+
+      if @includes.present?
+        included = []
+
+        @resource.each do |record|
+          included.concat self.class.get_included_records(record, @includes, @known_included_objects)
+        end
+
+        serializable_hash[:included] = included
+      end
+
+      serializable_hash[:meta] = @meta if @meta.present?
+      serializable_hash
+    end
+
     def serialized_json
       self.class.to_json(serializable_hash)
+    end
+
+    def serialized_json_concurrent
+      self.class.to_json(serializable_hash_concurrent)
     end
 
     private

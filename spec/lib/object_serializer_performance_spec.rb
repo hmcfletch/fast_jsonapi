@@ -20,6 +20,11 @@ describe FastJsonapi::ObjectSerializer, performance: true do
       hash_method: :serializable_hash,
       json_method: :serialized_json
     },
+    fast_jsonapi_concurrent: {
+      name: 'Fast Serializer Concurrent',
+      hash_method: :serializable_hash_concurrent,
+      json_method: :serialized_json_concurrent
+    },
     ams: {
       name: 'AMS serializer',
       speed_factor: 25,
@@ -123,6 +128,7 @@ describe FastJsonapi::ObjectSerializer, performance: true do
 
         serializers = {
           fast_jsonapi: MovieSerializer.new(movies),
+          fast_jsonapi_concurrent: MovieSerializer.new(movies),
           ams: ActiveModelSerializers::SerializableResource.new(ams_movies),
           jsonapi: JSONAPISerializer.new(jsonapi_movies),
           jsonapis: JSONAPISSerializer.new(jsonapis_movies)
@@ -160,6 +166,7 @@ describe FastJsonapi::ObjectSerializer, performance: true do
 
         serializers = {
           fast_jsonapi: MovieSerializer.new(movies, options),
+          fast_jsonapi_concurrent: MovieSerializer.new(movies, options),
           ams: ActiveModelSerializers::SerializableResource.new(ams_movies, include: options[:include], meta: options[:meta]),
           jsonapi: JSONAPISerializer.new(jsonapi_movies, include: options[:include], meta: options[:meta]),
           jsonapis: JSONAPISSerializer.new(jsonapis_movies, include: options[:include].map { |i| i.to_s.dasherize }, meta: options[:meta])
@@ -195,6 +202,7 @@ describe FastJsonapi::ObjectSerializer, performance: true do
 
         serializers = {
           fast_jsonapi: GroupSerializer.new(groups, options),
+          fast_jsonapi_concurrent: GroupSerializer.new(groups, options),
           ams: ActiveModelSerializers::SerializableResource.new(ams_groups),
           jsonapi: JSONAPISerializerB.new(jsonapi_groups),
           jsonapis: JSONAPISSerializerB.new(jsonapis_groups)
